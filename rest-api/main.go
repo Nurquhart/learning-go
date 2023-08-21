@@ -21,17 +21,13 @@ func main() {
 	
     app := fiber.New()
 
+	// create a new playlist
     app.Post("/", func(c *fiber.Ctx) error {
 
 		newPlaylist := new(models.PlaylistDTO)
 
 		if err := c.BodyParser(newPlaylist); err != nil {
 			return err
-		}
-
-		// mongodb is not great in this scenario, need this so songs is [] instead of null
-		if newPlaylist.Songs == nil {
-			newPlaylist.Songs = make([]models.Song, 0)
 		}
 		
 		collection := database.GetCollection("Playlists") 
@@ -43,6 +39,7 @@ func main() {
 		return c.JSON(fiber.Map{"id": nDoc.InsertedID});
     })
   
+	// get a list of your playlists
 	app.Get("/", func(c *fiber.Ctx) error {
 
 		libCollection := database.GetCollection("Playlists") 
@@ -58,6 +55,39 @@ func main() {
 		}
 
 		return c.JSON(playlists)
+
+    })
+ 
+	// delete a playlist
+	app.Delete("/:name", func(c *fiber.Ctx) error {
+
+		name := c.Params("name")
+ 
+		libCollection := database.GetCollection("Playlists") 
+		libCollection.DeleteOne(context.TODO(), bson.M{"name": name})
+		
+		return c.JSON("delete success")
+
+    })
+
+	// change the name of a playlist
+	app.Put("/:name", func(c *fiber.Ctx) error {
+
+		name := c.Params("name")
+		newName := new(models.NewName)
+
+		if err := c.BodyParser(newName); err != nil {
+			return err
+		}
+ 
+		// update := bson.D{{"$inc", bson.D{{"sizes.$", -2}}}}
+		filter := bson.D{{Key: "name", Value: name}}
+		update := bson.D{{Key: "$set", Value: bson.D{{Key: "name", Value: newName.Name}}}}
+
+		libCollection := database.GetCollection("Playlists") 
+		libCollection.UpdateOne(context.TODO(), filter, update) 
+		
+		return c.JSON("Name updated")
 
     })
 

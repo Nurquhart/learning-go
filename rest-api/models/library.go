@@ -19,3 +19,7 @@ type PlaylistDTO struct {
 	Description string `json:"description" bson:"description"`
 	Songs []Song `json:"songs" bson:"songs"`
 }
+
+type NewName struct {
+	Name string `json:"name" bson:"name"`
+}
